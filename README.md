@@ -27,22 +27,15 @@ First require the library in your program:
 require 'close_old_pull_requests'
 ```
 
-Then you can find a list of pull requests that need closing with:
+Then you can perform a cleanup of old pull requests by running:
 
 ```ruby
-pull_requests = [
-  { number: 42, title: 'Test', created_at: '2016-09-05T18:25:42Z' },
-  { number: 100, title: 'Test', created_at: '2016-09-07T12:00:00Z' },
-]
-
-CloseOldPullRequests::Finder.new(pull_requests).outdated.each do |pull_request|
+CloseOldPullRequests::Finder.clean(access_token: ENV['GITHUB_ACCESS_TOKEN']).each do |pull_request|
   puts "Pull request #{pull_request.number} is outdated. (Newest pull request is #{pull_request.superseded_by.number})"
 end
 ```
 
-This will output:
-
-    Pull request 42 is outdated. (Newest pull request is 100)
+You can omit the `access_token` argument if you're using the `GITHUB_ACCESS_TOKEN` environment variable, since that is the default.
 
 ## Development
 

@@ -1,7 +1,14 @@
 require 'close_old_pull_requests/version'
+require 'octokit'
 
 module CloseOldPullRequests
   PullRequest = Struct.new(:number, :superseded_by)
+
+  def self.clean(access_token: ENV['GITHUB_ACCESS_TOKEN'])
+    github = Octokit::Client.new
+    github.access_token = access_token
+    Cleaner.new(github).clean_old_pull_requests
+  end
 
   # Finds the outdated pull requests in a list of pull requests that comes
   # back from the GitHub API.
