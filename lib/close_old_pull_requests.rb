@@ -1,6 +1,8 @@
 require 'close_old_pull_requests/version'
 require 'octokit'
 
+Octokit.auto_paginate = true
+
 module CloseOldPullRequests
   PullRequest = Struct.new(:number, :superseded_by)
 
