@@ -10,7 +10,7 @@ Gem::Specification.new do |spec|
   spec.email         = ['chrismytton@gmail.com']
 
   spec.summary       = 'Finds outdated pull requests on EveryPolitician and closes them.'
-  spec.homepage      = "https://github.com/everypolitician/close_old_pull_requests"
+  spec.homepage      = 'https://github.com/everypolitician/close_old_pull_requests'
   spec.license       = 'MIT'
 
   spec.files         = `git ls-files -z`.split("\x0").reject { |f| f.match(%r{^(test|spec|features)/}) }
