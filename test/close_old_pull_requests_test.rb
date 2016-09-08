@@ -25,7 +25,7 @@ describe CloseOldPullRequests do
         { author: { login: 'everypoliticianbot' } },
       ]
       other_committers = CloseOldPullRequests::OtherCommitters.new(
-        commits: commits,
+        commits:       commits,
         primary_login: 'everypoliticianbot'
       )
       other_committers.author_logins.must_equal []
@@ -40,10 +40,10 @@ describe CloseOldPullRequests do
         { author: { login: 'chrismytton' } },
       ]
       other_committers = CloseOldPullRequests::OtherCommitters.new(
-        commits: commits,
+        commits:       commits,
         primary_login: 'everypoliticianbot'
       )
-      other_committers.author_logins.must_equal ['tmtmtmtm', 'chrismytton']
+      other_committers.author_logins.must_equal %w(tmtmtmtm chrismytton)
       other_committers.mentions.must_equal '@tmtmtmtm, @chrismytton'
       other_committers.empty?.must_equal false
     end
