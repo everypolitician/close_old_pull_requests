@@ -4,9 +4,9 @@ require 'octokit'
 module CloseOldPullRequests
   PullRequest = Struct.new(:number, :superseded_by)
 
-  def self.clean
+  def self.clean(access_token: ENV['GITHUB_ACCESS_TOKEN'])
     github = Octokit::Client.new
-    github.access_token = ENV['GITHUB_ACCESS_TOKEN']
+    github.access_token = access_token
     Cleaner.new(github).clean_old_pull_requests
   end
 
