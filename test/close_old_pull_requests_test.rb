@@ -17,4 +17,35 @@ describe CloseOldPullRequests do
       outdated_pr.superseded_by.number.must_equal 100
     end
   end
+
+  describe CloseOldPullRequests::OtherCommitters do
+    it 'represents a single committer' do
+      commits = [
+        { author: { login: 'everypoliticianbot' } },
+        { author: { login: 'everypoliticianbot' } },
+      ]
+      other_committers = CloseOldPullRequests::OtherCommitters.new(
+        commits: commits,
+        primary_login: 'everypoliticianbot'
+      )
+      other_committers.author_logins.must_equal []
+      other_committers.empty?.must_equal true
+      other_committers.mentions.must_equal ''
+    end
+
+    it 'represents multiple committers' do
+      commits = [
+        { author: { login: 'everypoliticianbot' } },
+        { author: { login: 'tmtmtmtm' } },
+        { author: { login: 'chrismytton' } },
+      ]
+      other_committers = CloseOldPullRequests::OtherCommitters.new(
+        commits: commits,
+        primary_login: 'everypoliticianbot'
+      )
+      other_committers.author_logins.must_equal ['tmtmtmtm', 'chrismytton']
+      other_committers.mentions.must_equal '@tmtmtmtm, @chrismytton'
+      other_committers.empty?.must_equal false
+    end
+  end
 end
