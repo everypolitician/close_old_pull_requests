@@ -42,4 +42,45 @@ module CloseOldPullRequests
       author_logins.empty?
     end
   end
+
+  class Cleaner
+    attr_reader :github
+
+    def initialize(github)
+      @github = github
+    end
+
+    def clean_old_pull_requests
+      Finder.new(pull_requests).outdated.each do |pull_request|
+        other_committers = OtherCommitters.new(
+          commits:       pull_request_commits(pull_request.number),
+          primary_login: github.user.login
+        )
+        if other_committers.empty? # The only commits were by @everypoliticianbot
+          message = "This Pull Request has been superseded by ##{pull_request.superseded_by.number}"
+          github.add_comment(everypolitician_data_repo, pull_request.number, message)
+          github.close_pull_request(everypolitician_data_repo, pull_request.number)
+        else # There are human commits
+          message = "This Pull Request has been superseded by ##{pull_request.superseded_by.number}" \
+            " but there are non-bot commits.\n\n" \
+            "#{other_committers.mentions} is this pull request still needed?"
+          github.add_comment(everypolitician_data_repo, pull_request.number, message)
+        end
+      end
+    end
+
+    private
+
+    def pull_requests
+      @pull_requests ||= github.pull_requests(everypolitician_data_repo)
+    end
+
+    def pull_request_commits(number)
+      github.pull_request_commits(everypolitician_data_repo, number)
+    end
+
+    def everypolitician_data_repo
+      ENV.fetch('EVERYPOLITICIAN_DATA_REPO', 'everypolitician/everypolitician-data')
+    end
+  end
 end
