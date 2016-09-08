@@ -30,7 +30,7 @@ require 'close_old_pull_requests'
 Then you can perform a cleanup of old pull requests by running:
 
 ```ruby
-CloseOldPullRequests::Finder.clean(access_token: ENV['GITHUB_ACCESS_TOKEN']).each do |pull_request|
+CloseOldPullRequests.clean(access_token: ENV['GITHUB_ACCESS_TOKEN']).each do |pull_request|
   puts "Pull request #{pull_request.number} is outdated. (Newest pull request is #{pull_request.superseded_by.number})"
 end
 ```
