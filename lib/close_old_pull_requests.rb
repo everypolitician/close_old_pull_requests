@@ -69,18 +69,23 @@ module CloseOldPullRequests
         )
         if other_committers.empty? # The only commits were by @everypoliticianbot
           message = "This Pull Request has been superseded by ##{pull_request.superseded_by.number}"
-          github.add_comment(everypolitician_data_repo, pull_request.number, message)
+          add_comment(pull_request.number, message)
           github.close_pull_request(everypolitician_data_repo, pull_request.number)
         else # There are human commits
           message = "This Pull Request has been superseded by ##{pull_request.superseded_by.number}" \
             " but there are non-bot commits.\n\n" \
             "#{other_committers.mentions} is this pull request still needed?"
-          github.add_comment(everypolitician_data_repo, pull_request.number, message)
+          add_comment(pull_request.number, message)
         end
       end
     end
 
     private
+
+    def add_comment(number, message)
+      return if github.issue_comments(everypolitician_data_repo, number).map(&:body).include?(message)
+      github.add_comment(everypolitician_data_repo, number, message)
+    end
 
     def pull_requests
       @pull_requests ||= github.pull_requests(everypolitician_data_repo)

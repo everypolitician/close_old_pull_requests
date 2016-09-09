@@ -60,6 +60,7 @@ describe CloseOldPullRequests do
     before do
       github.expect :user, GitHubUser.new('everypoliticianbot')
       github.expect :pull_requests, pull_requests, [everypolitician_data]
+      github.expect :issue_comments, [], [everypolitician_data, 42]
     end
 
     after { github.verify }
