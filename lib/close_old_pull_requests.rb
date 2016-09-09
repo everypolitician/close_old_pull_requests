@@ -10,7 +10,7 @@ module CloseOldPullRequests
     github = Octokit::Client.new
     github.access_token = access_token
     Cleaner.new(github).clean_old_pull_requests
-  rescue Octokit::Unauthorized => error
+  rescue Octokit::Unauthorized
     abort 'Please set GITHUB_ACCESS_TOKEN in the environment and try again'
   end
 
