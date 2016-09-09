@@ -55,6 +55,8 @@ module CloseOldPullRequests
   end
 
   class Cleaner
+    PRIMARY_LOGIN = 'everypoliticianbot'.freeze
+
     attr_reader :github
 
     def initialize(github)
@@ -65,7 +67,7 @@ module CloseOldPullRequests
       Finder.new(pull_requests).outdated.each do |pull_request|
         other_committers = OtherCommitters.new(
           commits:       pull_request_commits(pull_request.number),
-          primary_login: github.user.login
+          primary_login: PRIMARY_LOGIN
         )
         if other_committers.empty? # The only commits were by @everypoliticianbot
           message = "This Pull Request has been superseded by ##{pull_request.superseded_by.number}"
