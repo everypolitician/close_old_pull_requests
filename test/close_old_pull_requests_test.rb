@@ -5,18 +5,15 @@ describe CloseOldPullRequests do
     refute_nil ::CloseOldPullRequests::VERSION
   end
 
-  let(:pull_requests) do
-    [
-      { number: 42, title: 'Test', created_at: '2016-09-05T18:25:42Z', user: { login: 'everypoliticianbot' } },
-      { number: 100, title: 'Test', created_at: '2016-09-07T12:00:00Z', user: { login: 'everypoliticianbot' } },
-    ]
-  end
+  let(:outdated_pull_request) { { number: 42, title: 'Test', created_at: '2016-09-05T18:25:42Z', user: { login: 'everypoliticianbot' } } }
+  let(:new_pull_request) { { number: 100, title: 'Test', created_at: '2016-09-07T12:00:00Z', user: { login: 'everypoliticianbot' } } }
+  let(:pull_requests) { [outdated_pull_request, new_pull_request] }
 
   describe CloseOldPullRequests::Finder do
     it 'returns a list of outdated pull requests' do
-      outdated_pr = CloseOldPullRequests::Finder.new(pull_requests).outdated.first
-      outdated_pr.number.must_equal 42
-      outdated_pr.superseded_by.number.must_equal 100
+      outdated_pr, new_pr = CloseOldPullRequests::Finder.new(pull_requests).outdated.first
+      outdated_pr.must_equal outdated_pull_request
+      new_pr.must_equal new_pull_request
     end
   end
 
