@@ -26,8 +26,8 @@ module CloseOldPullRequests
     def outdated
       pull_requests.group_by { |pr| [pr[:title], pr[:user][:login]] }.values.flat_map do |pulls|
         pulls = pulls.sort_by { |p| p[:created_at] }.reverse.map { |pr| PullRequest.new(pr[:number]) }
-        new_pr = pulls.first
-        pulls.drop(1).map { |pull| [pull, new_pr] }
+        new_pr = pulls.shift
+        pulls.map { |pull| [pull, new_pr] }
       end.to_h
     end
   end
