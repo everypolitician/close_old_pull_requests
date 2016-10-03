@@ -59,6 +59,31 @@ module CloseOldPullRequests
     end
   end
 
+  class Summary
+    def initialize(new_pull_request_number:, other_committers:)
+      @new_pull_request_number = new_pull_request_number
+      @other_committers = other_committers
+    end
+
+    def message
+      if can_be_closed?
+        "This Pull Request has been superseded by ##{new_pull_request_number}"
+      else # There are human commits
+        "This Pull Request has been superseded by ##{new_pull_request_number}" \
+          " but there are non-bot commits.\n\n" \
+          "#{other_committers.mentions} is this pull request still needed?"
+      end
+    end
+
+    def can_be_closed?
+      other_committers.empty?
+    end
+
+    private
+
+    attr_reader :new_pull_request_number, :other_committers
+  end
+
   class Cleaner
     PRIMARY_LOGIN = 'everypoliticianbot'.freeze
 
@@ -74,16 +99,12 @@ module CloseOldPullRequests
           commits:       pull_request_commits(pull_request.number),
           primary_login: PRIMARY_LOGIN
         )
-        if other_committers.empty? # The only commits were by @everypoliticianbot
-          message = "This Pull Request has been superseded by ##{new_pull_request.number}"
-          add_comment(pull_request.number, message)
-          github.close_pull_request(everypolitician_data_repo, pull_request.number)
-        else # There are human commits
-          message = "This Pull Request has been superseded by ##{new_pull_request.number}" \
-            " but there are non-bot commits.\n\n" \
-            "#{other_committers.mentions} is this pull request still needed?"
-          add_comment(pull_request.number, message)
-        end
+        summary = Summary.new(
+          new_pull_request_number: new_pull_request.number,
+          other_committers: other_committers
+        )
+        add_comment(pull_request.number, summary.message)
+        github.close_pull_request(everypolitician_data_repo, pull_request.number) if summary.can_be_closed?
       end
     end
 

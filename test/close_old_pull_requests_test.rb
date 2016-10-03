@@ -101,4 +101,43 @@ describe CloseOldPullRequests do
       end
     end
   end
+
+  describe CloseOldPullRequests::Summary do
+    OtherCommittersMock = Struct.new(:mentions, :empty) { def empty?; empty; end }
+
+    describe 'with no other committers' do
+      subject do
+        CloseOldPullRequests::Summary.new(
+          new_pull_request_number: 42,
+          other_committers: OtherCommittersMock.new('', true)
+        )
+      end
+
+      it 'leaves a message pointing to the new pull request' do
+        subject.message.must_equal 'This Pull Request has been superseded by #42'
+      end
+
+      it 'can close the pull request' do
+        subject.can_be_closed?.must_equal true
+      end
+    end
+
+    describe 'with other committers' do
+      subject do
+        CloseOldPullRequests::Summary.new(
+          new_pull_request_number: 42,
+          other_committers: OtherCommittersMock.new('@example, @mention', false)
+        )
+      end
+
+      it 'leaves a message pointing to the new pull request' do
+        subject.message.must_equal "This Pull Request has been superseded by #42 but there are non-bot commits.\n\n" \
+          '@example, @mention is this pull request still needed?'
+      end
+
+      it "can't close the pull request" do
+        subject.can_be_closed?.must_equal false
+      end
+    end
+  end
 end
