@@ -101,7 +101,7 @@ module CloseOldPullRequests
         )
         summary = Summary.new(
           new_pull_request_number: new_pull_request.number,
-          other_committers: other_committers
+          other_committers:        other_committers
         )
         add_comment(pull_request.number, summary.message)
         github.close_pull_request(everypolitician_data_repo, pull_request.number) if summary.can_be_closed?

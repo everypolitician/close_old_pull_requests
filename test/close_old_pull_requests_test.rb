@@ -103,13 +103,17 @@ describe CloseOldPullRequests do
   end
 
   describe CloseOldPullRequests::Summary do
-    OtherCommittersMock = Struct.new(:mentions, :empty) { def empty?; empty; end }
+    OtherCommittersMock = Struct.new(:mentions, :empty) do
+      def empty?
+        empty
+      end
+    end
 
     describe 'with no other committers' do
       subject do
         CloseOldPullRequests::Summary.new(
           new_pull_request_number: 42,
-          other_committers: OtherCommittersMock.new('', true)
+          other_committers:        OtherCommittersMock.new('', true)
         )
       end
 
@@ -126,7 +130,7 @@ describe CloseOldPullRequests do
       subject do
         CloseOldPullRequests::Summary.new(
           new_pull_request_number: 42,
-          other_committers: OtherCommittersMock.new('@example, @mention', false)
+          other_committers:        OtherCommittersMock.new('@example, @mention', false)
         )
       end
 
