@@ -23,6 +23,11 @@ module CloseOldPullRequests
       @pull_requests = pull_requests
     end
 
+    # Sorts through the `pull_requests` and returns a Hash where the key is the
+    # pull request that is now considered outdated and the value is the pull
+    # request that supersedes it.
+    #
+    # @return [Hash] old to new pull request mapping
     def outdated
       pull_requests.group_by { |pr| [pr[:title], pr[:user][:login]] }.values.flat_map do |pulls|
         pulls = pulls.sort_by { |p| p[:created_at] }.reverse.map { |pr| PullRequest.new(pr[:number]) }
