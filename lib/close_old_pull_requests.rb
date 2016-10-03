@@ -4,6 +4,8 @@ require 'octokit'
 Octokit.auto_paginate = true
 
 module CloseOldPullRequests
+  PullRequest = Struct.new(:number)
+
   def self.clean(access_token: ENV['GITHUB_ACCESS_TOKEN'])
     github = Octokit::Client.new
     github.access_token = access_token
@@ -23,7 +25,7 @@ module CloseOldPullRequests
 
     def outdated
       pull_requests.group_by { |pr| [pr[:title], pr[:user][:login]] }.values.flat_map do |pulls|
-        pulls = pulls.sort_by { |p| p[:created_at] }.reverse
+        pulls = pulls.sort_by { |p| p[:created_at] }.reverse.map { |pr| PullRequest.new(pr[:number]) }
         new_pr = pulls.first
         pulls.drop(1).map { |pull| [pull, new_pr] }
       end.to_h
@@ -64,18 +66,18 @@ module CloseOldPullRequests
     def clean_old_pull_requests
       Finder.new(pull_requests).outdated.each do |pull_request, new_pull_request|
         other_committers = OtherCommitters.new(
-          commits:       pull_request_commits(pull_request[:number]),
+          commits:       pull_request_commits(pull_request.number),
           primary_login: PRIMARY_LOGIN
         )
         if other_committers.empty? # The only commits were by @everypoliticianbot
-          message = "This Pull Request has been superseded by ##{new_pull_request[:number]}"
-          add_comment(pull_request[:number], message)
-          github.close_pull_request(everypolitician_data_repo, pull_request[:number])
+          message = "This Pull Request has been superseded by ##{new_pull_request.number}"
+          add_comment(pull_request.number, message)
+          github.close_pull_request(everypolitician_data_repo, pull_request.number)
         else # There are human commits
-          message = "This Pull Request has been superseded by ##{new_pull_request[:number]}" \
+          message = "This Pull Request has been superseded by ##{new_pull_request.number}" \
             " but there are non-bot commits.\n\n" \
             "#{other_committers.mentions} is this pull request still needed?"
-          add_comment(pull_request[:number], message)
+          add_comment(pull_request.number, message)
         end
       end
     end

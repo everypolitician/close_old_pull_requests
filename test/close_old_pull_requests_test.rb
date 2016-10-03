@@ -12,8 +12,8 @@ describe CloseOldPullRequests do
   describe CloseOldPullRequests::Finder do
     it 'returns a list of outdated pull requests' do
       outdated_pr, new_pr = CloseOldPullRequests::Finder.new(pull_requests).outdated.first
-      outdated_pr.must_equal outdated_pull_request
-      new_pr.must_equal new_pull_request
+      outdated_pr.number.must_equal 42
+      new_pr.number.must_equal 100
     end
   end
 
