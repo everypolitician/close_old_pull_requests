@@ -4,7 +4,7 @@ require 'octokit'
 Octokit.auto_paginate = true
 
 module CloseOldPullRequests
-  PullRequest = Struct.new(:number, :superseded_by)
+  PullRequest = Struct.new(:number)
 
   def self.clean(access_token: ENV['GITHUB_ACCESS_TOKEN'])
     github = Octokit::Client.new
@@ -23,12 +23,17 @@ module CloseOldPullRequests
       @pull_requests = pull_requests
     end
 
+    # Sorts through the `pull_requests` and returns a Hash where the key is the
+    # pull request that is now considered outdated and the value is the pull
+    # request that supersedes it.
+    #
+    # @return [Hash] old to new pull request mapping
     def outdated
-      pull_requests.group_by { |pr| [pr[:title], pr[:user][:login]] }.values.map do |pulls|
-        pulls = pulls.sort_by { |p| p[:created_at] }.reverse
-        new_pr = PullRequest.new(pulls.first[:number])
-        pulls.drop(1).map { |p| PullRequest.new(p[:number], new_pr) }
-      end.compact.flatten
+      pull_requests.group_by { |pr| [pr[:title], pr[:user][:login]] }.values.flat_map do |pulls|
+        pulls = pulls.sort_by { |p| p[:created_at] }.reverse.map { |pr| PullRequest.new(pr[:number]) }
+        new_pr = pulls.shift
+        pulls.map { |pull| [pull, new_pr] }
+      end.to_h
     end
   end
 
@@ -54,6 +59,31 @@ module CloseOldPullRequests
     end
   end
 
+  class Summary
+    def initialize(new_pull_request_number:, other_committers:)
+      @new_pull_request_number = new_pull_request_number
+      @other_committers = other_committers
+    end
+
+    def message
+      if can_be_closed?
+        "This Pull Request has been superseded by ##{new_pull_request_number}"
+      else # There are human commits
+        "This Pull Request has been superseded by ##{new_pull_request_number}" \
+          " but there are non-bot commits.\n\n" \
+          "#{other_committers.mentions} is this pull request still needed?"
+      end
+    end
+
+    def can_be_closed?
+      other_committers.empty?
+    end
+
+    private
+
+    attr_reader :new_pull_request_number, :other_committers
+  end
+
   class Cleaner
     PRIMARY_LOGIN = 'everypoliticianbot'.freeze
 
@@ -64,21 +94,17 @@ module CloseOldPullRequests
     end
 
     def clean_old_pull_requests
-      Finder.new(pull_requests).outdated.each do |pull_request|
+      Finder.new(pull_requests).outdated.each do |pull_request, new_pull_request|
         other_committers = OtherCommitters.new(
           commits:       pull_request_commits(pull_request.number),
           primary_login: PRIMARY_LOGIN
         )
-        if other_committers.empty? # The only commits were by @everypoliticianbot
-          message = "This Pull Request has been superseded by ##{pull_request.superseded_by.number}"
-          add_comment(pull_request.number, message)
-          github.close_pull_request(everypolitician_data_repo, pull_request.number)
-        else # There are human commits
-          message = "This Pull Request has been superseded by ##{pull_request.superseded_by.number}" \
-            " but there are non-bot commits.\n\n" \
-            "#{other_committers.mentions} is this pull request still needed?"
-          add_comment(pull_request.number, message)
-        end
+        summary = Summary.new(
+          new_pull_request_number: new_pull_request.number,
+          other_committers:        other_committers
+        )
+        add_comment(pull_request.number, summary.message)
+        github.close_pull_request(everypolitician_data_repo, pull_request.number) if summary.can_be_closed?
       end
     end
 
